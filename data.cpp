@@ -12,17 +12,60 @@ using namespace soccer;
 
 namespace soccer {
 	namespace data {
-		std::ostream& category::operator<<(std::ostream& oStrStream, const category val) {
-			oStrStream << "TestEnum";
-			return oStrStream;
+		ostream& operator<<(ostream& os, const enum category val) {
+			switch (val) {
+				case category::U6:
+					os << "U6";
+					break;
+				case category::U8:
+					os << "U8";
+					break;
+				case category::U10:
+					os << "U10";
+					break;
+				case category::U12:
+					os << "U12";
+					break;
+				case category::U14:
+					os << "U14";
+					break;
+				case category::U17:
+					os << "U17";
+					break;
+				default:
+					throw runtime_error("invalid value for `category`");
+			}
+
+			return os;
 		}
 
-		std::ostream& status::operator<<(std::ostream& oStrStream, const category val) {
-			oStrStream << "TestEnum";
-			return oStrStream;
-		}
-		istream& status::operator>>(istream& out) {
+		ostream& operator<<(ostream& os, const enum status val) {
+			switch (val) {
+				case status::Paid:
+					os << "Paid";
+					break;
+				case status::Unpaid:
+					os << "Unpaid";
+					break;
+				default:
+					throw runtime_error("invalid value for `status`");
+			}
 
+			return os;
+		}
+
+		istream& operator>>(istream& is, enum status& val) {
+			string s;
+			is >> s;
+			if (s == "Paid") {
+				val = status::Paid;
+			} else if (s == "Unpaid") {
+				val = status::Unpaid;
+			} else {
+				throw runtime_error("invalid file");
+			}
+
+			return is;
 		}
 
 		student::student(string name, int yob, enum status stat) {
@@ -35,13 +78,13 @@ namespace soccer {
 		void student::redetermine_category(int year) {
 			int age = year - this->year_of_birth;
 			if (age < 0) {
-				throw new runtime_error("somehow this person was born after the current year");
+				throw runtime_error("somehow this person was born after the current year");
 			}
 
 			enum category cat;
 
 			if (age < 4) {
-				throw new runtime_error("student too young");
+				throw runtime_error("student too young");
 			} else if (age < 6) {
 				cat = category::U6;
 			} else if (age < 8) {
@@ -55,17 +98,29 @@ namespace soccer {
 			} else if (age < 17) {
 				cat = category::U17;
 			} else {
-				throw new runtime_error("student too old");
+				throw runtime_error("student too old");
 			}
 
 			this->category = cat;
 
 		}
 
+		student student::from_istream(std::istream& is) {
+			string name, unused;
+			int yob;
+			enum status stat;
+
+			is >> name >> yob >> unused >> stat;
+
+			return student(name, yob, stat);
+		}
+
 		data_access::data_access() : data_access(string("soccer.db")) { }
 
 		data_access::data_access(string filename) {
-			fstream file(filename);
+			// delegating constructor doesn't quite work here, so
+			// unfortunately duplicate it :(
+			fstream file(filename, ios_base::out | ios_base::in);
 			if (!file) {
 				throw runtime_error("could not open database file");
 			}
@@ -76,8 +131,22 @@ namespace soccer {
 			this->file >> this->year;
 			while (true) {
 				student x = student::from_istream(this->file);
+				x.redetermine_category(this->year);
 				this->students.push_back(x);
 			}
+		}
+
+		data_access::data_access(string filename, int date) {
+			// delegating constructor doesn't quite work here, so
+			// unfortunately duplicate it :(
+			this->year = date;
+			fstream file(filename, ios_base::in | ios_base::out);
+			if (!file) {
+				throw runtime_error("could not open database file");
+			}
+
+			// why
+			//this->file = file;
 		}
 
 		student& data_access::find_student(string studentname) {
@@ -89,6 +158,7 @@ namespace soccer {
 		}
 
 		void data_access::add_student(student s) {
+			s.redetermine_category(this->year);
 			this->students.emplace_back(s);
 		}
 

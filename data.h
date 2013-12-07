@@ -2,6 +2,7 @@
 #include <vector>
 #include <istream>
 #include <iostream>
+#include <fstream>
 
 namespace soccer {
 	namespace data {
@@ -12,16 +13,16 @@ namespace soccer {
 			U12,
 			U14,
 			U17,
-			UUnknown;
-
-			std::ostream& operator<<(std::ostream& oStrStream, const category val);
+			UUnknown
 		};
 
 		enum class status {
 			Paid,
 			Unpaid
-			std::ostream& operator<<(std::ostream& oStrStream, const category val);
 		};
+
+		std::ostream& operator<<(std::ostream& oStrStream, const enum category val);
+		std::ostream& operator<<(std::ostream& oStrStream, const enum status val);
 
 		class student {
 			public:
@@ -34,7 +35,7 @@ namespace soccer {
 				student(std::string name);
 				student(std::string name, int year_of_birth); */
 				student(std::string name, int year_of_birth, enum status stat);
-				static student& from_istream(std::istream& file);
+				static student from_istream(std::istream& file);
 				void redetermine_category(int year);
 		};
 
@@ -53,6 +54,13 @@ namespace soccer {
 				 * Open a file with the given name as a database.
 				 */
 				data_access(std::string filename);
+
+				/**
+				 * Open a file with the given name as a database, but use the
+				 * given date instead of loading it.
+				 */
+				data_access(std::string filename, int date);
+
 
 				student& find_student(std::string);
 				void add_student(student);
